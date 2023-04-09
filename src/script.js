@@ -1,6 +1,13 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "lil-gui";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+
+/**
+ * Fonts
+ */
+const fontLoader = new FontLoader();
 
 /*
  * Textures
@@ -17,6 +24,28 @@ const saturnRingAlphaTexture = textureLoader.load(
 const neptuneRingAlphaTexture = textureLoader.load(
   "/textures/neptuneRingAlphaTexture.png"
 );
+const matcapTexture = textureLoader.load("/textures/matcaps/1.png");
+
+fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
+  const textGeometry = new TextGeometry("Yut Game", {
+    font: font,
+    size: 2,
+    height: 0.2,
+    curveSegments: 3,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.02,
+    bevelOffset: 0,
+    bevelSegments: 3,
+  });
+  textGeometry.center();
+
+  const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
+  const text = new THREE.Mesh(textGeometry, material);
+  text.position.set(0, 10, 0);
+  scene.add(text);
+  console.log("text");
+});
 
 /*
  * Debug
@@ -222,31 +251,6 @@ tile_outer_ring_28.position.set(
 );
 tile_outer_ring_28.name = "star";
 boardTileGroup.add(tile_outer_ring_28);
-
-/*for (let i = -1; i < 3; i++) {
-  //ring 1
-  const tile_outer_ring = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3),
-    new THREE.MeshBasicMaterial({ color: 0xfcff72 })
-  );
-  tile_outer_ring.position.set(
-    Math.cos((2 * Math.PI * 5 * i) / 20) * radius_shortcut_1,
-    0,
-    Math.sin((2 * Math.PI * 5 * i) / 20) * radius_shortcut_1
-  );
-  group.add(tile_outer_ring);
-  //ring 2
-  const tile_inner_ring = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3),
-    new THREE.MeshBasicMaterial({ color: 0xfcff72 })
-  );
-  tile_inner_ring.position.set(
-    Math.cos((2 * Math.PI * 5 * i) / 20) * radius_shortcut_2,
-    0,
-    Math.sin((2 * Math.PI * 5 * i) / 20) * radius_shortcut_2
-  );
-  group.add(tile_inner_ring);
-}*/
 
 const parameters = {
   outerRingRadiusWiden: () => {
