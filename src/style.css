@@ -1,0 +1,16 @@
+/* doesn't need to be used with styling for .webgl to fit canvas into window */
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  overflow: hidden;
+}
+
+.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
+}
