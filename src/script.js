@@ -5,6 +5,10 @@ import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 /**
+ * Parameters
+ */
+
+/**
  * Fonts
  */
 const fontLoader = new FontLoader();
@@ -24,7 +28,7 @@ const saturnRingAlphaTexture = textureLoader.load(
 const neptuneRingAlphaTexture = textureLoader.load(
   "/textures/neptuneRingAlphaTexture.png"
 );
-const matcapTexture = textureLoader.load("/textures/matcaps/1.png");
+const matcapTexture = textureLoader.load("/textures/matcaps/shiny.png");
 
 fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
   const textGeometry = new TextGeometry("Yut Game", {
@@ -42,7 +46,7 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
 
   const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
   const text = new THREE.Mesh(textGeometry, material);
-  text.position.set(0, 10, 0);
+  text.position.set(0, 10, -10);
   scene.add(text);
   console.log("text");
 });
@@ -60,6 +64,28 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d0d);
+
+/**
+ * Decoration with stars and planets
+ */
+const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
+const sphereGeometry = new THREE.SphereGeometry(0.3);
+for (let i = 0; i < 1000; i++) {
+  const star = new THREE.Mesh(sphereGeometry, material);
+
+  star.position.x = (Math.random() - 0.5) * 300 + 50;
+  star.position.y = (Math.random() - 0.5) * 300 + 50;
+  star.position.z = (Math.random() - 0.5) * 300 + 50;
+  star.rotation.x = Math.random() * 2 * Math.PI;
+  star.rotation.y = Math.random() * 2 * Math.PI;
+  star.rotation.z = Math.random() * 2 * Math.PI;
+  const scale = Math.random();
+  star.scale.x = scale;
+  star.scale.y = scale;
+  star.scale.z = scale;
+  scene.add(star);
+}
 
 /**
  * Object
@@ -293,6 +319,8 @@ const parameters = {
       Math.abs(boardTileGroup.children[28].position.x)
     );
   },
+  ambientLightColor: 0x2a2222,
+  pointLightColor: 0x4d4d75,
 };
 
 gui.add(parameters, "outerRingRadiusWiden").name("outer ring radius widen");
@@ -321,6 +349,67 @@ gui
   .max(5)
   .step(0.01)
   .name("polaris z scale");
+gui.addColor(parameters, "ambientLightColor").onChange(() => {
+  ambientLight.color = new THREE.Color(parameters.ambientLightColor);
+});
+gui.addColor(parameters, "pointLightColor").onChange(() => {
+  pointLightBottomLeft.color = new THREE.Color(parameters.pointLightColor);
+  pointLightBottomRight.color = new THREE.Color(parameters.pointLightColor);
+  pointLightTopLeft.color = new THREE.Color(parameters.pointLightColor);
+  pointLightTopRight.color = new THREE.Color(parameters.pointLightColor);
+});
+
+/**
+ * Board Floor
+ */
+const standardMaterial = new THREE.MeshStandardMaterial();
+const galaxy_floor = new THREE.Mesh(
+  new THREE.CylinderGeometry(20, 20, 1),
+  standardMaterial
+);
+galaxy_floor.position.set(0, -2, 0);
+galaxy_floor.name = "galaxy_floor";
+scene.add(galaxy_floor);
+
+/**
+ * Lights
+ */
+const ambientLight = new THREE.AmbientLight(0x2a2222, 0.5);
+// ambientLight.color = new THREE.Color(0xffff00);
+ambientLight.intensity = 1;
+scene.add(ambientLight);
+
+// const directionalLight = new THREE.DirectionalLight(
+//   parameters.directionalLightcolor,
+//   0.3
+// );
+// directionalLight.position.set(0, 3, 0);
+// scene.add(directionalLight);
+
+// const directionalLightHelper = new THREE.DirectionalLightHelper(
+//   directionalLight,
+//   5
+// );
+// scene.add(directionalLightHelper);
+
+const pointLightBottomLeft = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+pointLightBottomLeft.position.set(-7, 1, 7);
+scene.add(pointLightBottomLeft);
+
+const pointLightBottomRight = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+pointLightBottomRight.position.set(7, 1, 7);
+scene.add(pointLightBottomRight);
+
+const pointLightTopLeft = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+pointLightTopLeft.position.set(7, 1, -7);
+scene.add(pointLightTopLeft);
+
+const pointLightTopRight = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+pointLightTopRight.position.set(-7, 1, -7);
+scene.add(pointLightTopRight);
+
+const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 0.3);
+// scene.add(hemisphereLight);
 
 /**
  * Sizes
@@ -370,7 +459,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.z = 30;
-camera.position.y = 10;
+camera.position.y = 30;
 camera.lookAt(polaris.position);
 scene.add(camera);
 
