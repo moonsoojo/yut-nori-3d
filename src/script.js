@@ -66,6 +66,20 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0d0d0d);
 
+function getRandomCoordinatesInRange(min, scale) {
+  let x = (Math.random() - 0.5) * scale;
+  let y = (Math.random() - 0.5) * scale;
+  let z = (Math.random() - 0.5) * scale;
+  let distance = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+  while (distance < min) {
+    x = (Math.random() - 0.5) * scale;
+    y = (Math.random() - 0.5) * scale;
+    z = (Math.random() - 0.5) * scale;
+    distance = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+  }
+  return [x, y, z];
+}
+
 /**
  * Decoration with stars and planets
  */
@@ -73,10 +87,10 @@ const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
 const sphereGeometry = new THREE.SphereGeometry(0.3);
 for (let i = 0; i < 1000; i++) {
   const star = new THREE.Mesh(sphereGeometry, material);
-
-  star.position.x = (Math.random() - 0.5) * 300 + 50;
-  star.position.y = (Math.random() - 0.5) * 300 + 50;
-  star.position.z = (Math.random() - 0.5) * 300 + 50;
+  let randomCoordinates = getRandomCoordinatesInRange(40, 200);
+  star.position.x = randomCoordinates[0];
+  star.position.y = randomCoordinates[1];
+  star.position.z = randomCoordinates[2];
   star.rotation.x = Math.random() * 2 * Math.PI;
   star.rotation.y = Math.random() * 2 * Math.PI;
   star.rotation.z = Math.random() * 2 * Math.PI;
