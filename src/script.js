@@ -18,6 +18,8 @@ const fontLoader = new FontLoader();
  */
 const loadingManager = new THREE.LoadingManager();
 const textureLoader = new THREE.TextureLoader(loadingManager);
+const moonTexture = textureLoader.load("/textures/moon-darker.png");
+// const moonColorTexture = textureLoader.load("/textures/moonColor.png");
 const grassTexture = textureLoader.load("/textures/grass.jpg");
 const neptuneTexture = textureLoader.load("/textures/neptune.jpg");
 const marsTexture = textureLoader.load("/textures/mars.jpg");
@@ -47,14 +49,9 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
   const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
   const text = new THREE.Mesh(textGeometry, material);
   text.position.set(0, 10, -10);
-  scene.add(text);
+  // scene.add(text);
   console.log("text");
 });
-
-/*
- * Debug
- */
-const gui = new dat.GUI();
 
 /**
  * Base
@@ -337,61 +334,70 @@ const parameters = {
   pointLightColor: 0x4d4d75,
 };
 
-gui.add(parameters, "outerRingRadiusWiden").name("outer ring radius widen");
-gui
-  .add(parameters, "outerRingRadiusShrinken")
-  .name("outer ring radius shrinken");
-gui.add(parameters, "innerRingRadiusWiden").name("inner ring radius widen");
-gui
-  .add(parameters, "innerRingRadiusShrinken")
-  .name("inner ring radius shrinken");
-gui
-  .add(boardTileGroup.children[20].scale, "x")
-  .min(1)
-  .max(5)
-  .step(0.01)
-  .name("polaris x scale");
-gui
-  .add(boardTileGroup.children[20].scale, "y")
-  .min(1)
-  .max(5)
-  .step(0.01)
-  .name("polaris y scale");
-gui
-  .add(boardTileGroup.children[20].scale, "z")
-  .min(1)
-  .max(5)
-  .step(0.01)
-  .name("polaris z scale");
-gui.addColor(parameters, "ambientLightColor").onChange(() => {
-  ambientLight.color = new THREE.Color(parameters.ambientLightColor);
-});
-gui.addColor(parameters, "pointLightColor").onChange(() => {
-  pointLightBottomLeft.color = new THREE.Color(parameters.pointLightColor);
-  pointLightBottomRight.color = new THREE.Color(parameters.pointLightColor);
-  pointLightTopLeft.color = new THREE.Color(parameters.pointLightColor);
-  pointLightTopRight.color = new THREE.Color(parameters.pointLightColor);
-});
+/*
+ * Debug
+ */
+//const gui = new dat.GUI();
+
+// gui.add(parameters, "outerRingRadiusWiden").name("outer ring radius widen");
+// gui
+//   .add(parameters, "outerRingRadiusShrinken")
+//   .name("outer ring radius shrinken");
+// gui.add(parameters, "innerRingRadiusWiden").name("inner ring radius widen");
+// gui
+//   .add(parameters, "innerRingRadiusShrinken")
+//   .name("inner ring radius shrinken");
+// gui
+//   .add(boardTileGroup.children[20].scale, "x")
+//   .min(1)
+//   .max(5)
+//   .step(0.01)
+//   .name("polaris x scale");
+// gui
+//   .add(boardTileGroup.children[20].scale, "y")
+//   .min(1)
+//   .max(5)
+//   .step(0.01)
+//   .name("polaris y scale");
+// gui
+//   .add(boardTileGroup.children[20].scale, "z")
+//   .min(1)
+//   .max(5)
+//   .step(0.01)
+//   .name("polaris z scale");
+// gui.addColor(parameters, "ambientLightColor").onChange(() => {
+//   ambientLight.color = new THREE.Color(parameters.ambientLightColor);
+// });
+// gui.addColor(parameters, "pointLightColor").onChange(() => {
+//   pointLightBottomLeft.color = new THREE.Color(parameters.pointLightColor);
+//   pointLightBottomRight.color = new THREE.Color(parameters.pointLightColor);
+//   pointLightTopLeft.color = new THREE.Color(parameters.pointLightColor);
+//   pointLightTopRight.color = new THREE.Color(parameters.pointLightColor);
+// });
 
 /**
  * Board Floor
  */
-const standardMaterial = new THREE.MeshStandardMaterial();
+const boardMaterial = new THREE.MeshBasicMaterial({
+  map: moonTexture,
+  transparent: true,
+});
 const galaxy_floor = new THREE.Mesh(
-  new THREE.CylinderGeometry(20, 20, 1),
-  standardMaterial
+  new THREE.PlaneGeometry(32, 32),
+  boardMaterial
 );
 galaxy_floor.position.set(0, -2, 0);
+galaxy_floor.rotation.x = -Math.PI / 2;
 galaxy_floor.name = "galaxy_floor";
 scene.add(galaxy_floor);
 
 /**
  * Lights
  */
-const ambientLight = new THREE.AmbientLight(0x2a2222, 0.5);
-// ambientLight.color = new THREE.Color(0xffff00);
-ambientLight.intensity = 1;
-scene.add(ambientLight);
+// const ambientLight = new THREE.AmbientLight(0x2a2222, 0.5);
+// // ambientLight.color = new THREE.Color(0xffff00);
+// ambientLight.intensity = 1;
+// scene.add(ambientLight);
 
 // const directionalLight = new THREE.DirectionalLight(
 //   parameters.directionalLightcolor,
@@ -472,7 +478,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.z = 30;
+camera.position.z = 0;
 camera.position.y = 30;
 camera.lookAt(polaris.position);
 scene.add(camera);
