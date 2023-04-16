@@ -289,16 +289,18 @@ tile_outer_ring_28.name = "star";
 boardTileGroup.add(tile_outer_ring_28);
 
 const spaceships = new THREE.Group();
-function spawnSpaceship(spawnLocation) {
-  const spaceship = new THREE.Mesh(
-    new THREE.CapsuleGeometry(1, 1, 4, 8),
-    new THREE.MeshBasicMaterial({ color: 0xffffff })
-  );
-  spaceship.position.set(spawnLocation.x, spawnLocation.y, spawnLocation.z);
-  spaceship.rotation.z = Math.PI / 4;
-  spaceship.name = "spaceship";
-  spaceships.add(spaceship);
-  return spaceship;
+const shootingStars = new THREE.Group();
+
+function spawnBackgroundMesh(mesh, spawnLocation, group, spawnTime) {
+  mesh.position.set(spawnLocation.x, spawnLocation.y, spawnLocation.z);
+  mesh.rotation.z = Math.PI / 4;
+  mesh.name = "spaceship";
+  if (group != undefined) {
+    group.add(mesh);
+  }
+  mesh.spawnTime = spawnTime;
+  mesh.direction = makeRandomDirection();
+  // return mesh;
 }
 
 function randomLocation(minX, maxX, minY, maxY, minZ, maxZ) {
@@ -310,6 +312,7 @@ function randomLocation(minX, maxX, minY, maxY, minZ, maxZ) {
 }
 
 scene.add(spaceships);
+scene.add(shootingStars);
 
 const parameters = {
   outerRingRadiusWiden: () => {
@@ -404,14 +407,14 @@ const boardMaterial = new THREE.MeshBasicMaterial({
   map: moonTexture,
   transparent: true,
 });
-const galaxy_floor = new THREE.Mesh(
+const galaxyFloor = new THREE.Mesh(
   new THREE.PlaneGeometry(32, 32),
   boardMaterial
 );
-galaxy_floor.position.set(0, -2, 0);
-galaxy_floor.rotation.x = -Math.PI / 2;
-galaxy_floor.name = "galaxy_floor";
-scene.add(galaxy_floor);
+galaxyFloor.position.set(0, -2, 0);
+galaxyFloor.rotation.x = -Math.PI / 2;
+galaxyFloor.name = "galaxyFloor";
+scene.add(galaxyFloor);
 
 /**
  * Lights
@@ -528,7 +531,9 @@ const clock = new THREE.Clock();
 
 // Hyperparameters
 const spaceshipSecondsToTravel = 10;
-const speedModifier = 0.5;
+const spaceshipSpeedModifier = 0.5;
+const shootingStarSecondsToTravel = 3;
+const shootingStarSpeedModifier = 2;
 
 function makeRandomDirection() {
   let x = Math.random() - 0.5;
@@ -540,7 +545,6 @@ function makeRandomDirection() {
 }
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-  console.log(elapsedTime);
 
   //stars should move up and down about their locations
   //planets should rotate about their centers
@@ -563,29 +567,65 @@ const tick = () => {
   //delete it
   //spaceships.add(spawnSpaceship({ x: -40, y: 0, z: -20 + elapsedTime }, 100));
   //console.log(spaceships);
-  if (Math.random() < 0.01) {
-    let spaceship = spawnSpaceship(getRandomCoordinatesInRange(10, 30));
-    spaceship.elapsedTime = elapsedTime;
-    //direction
-    //unit vector in x, y and z
-    spaceship.direction = makeRandomDirection();
-    spaceships.add(spaceship);
+  if (Math.random() < 0.03) {
+    if (Math.random() < 0.8) {
+      const spaceshipMesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(1, 1, 4, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      spawnBackgroundMesh(
+        spaceshipMesh,
+        getRandomCoordinatesInRange(10, 40),
+        spaceships,
+        elapsedTime
+      );
+    } else {
+      const starMesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(1, 1, 4, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffff00 })
+      );
+      spawnBackgroundMesh(
+        starMesh,
+        getRandomCoordinatesInRange(10, 40),
+        shootingStars,
+        elapsedTime
+      );
+    }
   }
 
   for (let i = spaceships.children.length - 1; i >= 0; i--) {
     if (
       elapsedTime - spaceships.children[i].elapsedTime >
         spaceshipSecondsToTravel ||
-      spaceships.children.position.distanceTo(camera.position) < 5
+      spaceships.children[i].position.distanceTo(camera.position) < 30 ||
+      spaceships.children[i].position.distanceTo(galaxyFloor.position) < 20
     ) {
       spaceships.remove(spaceships.children[i]);
     } else {
       spaceships.children[i].position.x +=
-        spaceships.children[i].direction.x * speedModifier;
+        spaceships.children[i].direction.x * spaceshipSpeedModifier;
       spaceships.children[i].position.y +=
-        spaceships.children[i].direction.y * speedModifier;
+        spaceships.children[i].direction.y * spaceshipSpeedModifier;
       spaceships.children[i].position.z +=
-        spaceships.children[i].direction.z * speedModifier;
+        spaceships.children[i].direction.z * spaceshipSpeedModifier;
+    }
+  }
+
+  for (let i = shootingStars.children.length - 1; i >= 0; i--) {
+    if (
+      elapsedTime - shootingStars.children[i].elapsedTime >
+        shootingStarSecondsToTravel ||
+      shootingStars.children[i].position.distanceTo(camera.position) < 30 ||
+      shootingStars.children[i].position.distanceTo(galaxyFloor.position) < 20
+    ) {
+      shootingStars.remove(shootingStars.children[i]);
+    } else {
+      shootingStars.children[i].position.x +=
+        shootingStars.children[i].direction.x * shootingStarSpeedModifier;
+      shootingStars.children[i].position.y +=
+        shootingStars.children[i].direction.y * shootingStarSpeedModifier;
+      shootingStars.children[i].position.z +=
+        shootingStars.children[i].direction.z * shootingStarSpeedModifier;
     }
   }
 
