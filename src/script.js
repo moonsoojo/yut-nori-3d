@@ -50,7 +50,6 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
   const text = new THREE.Mesh(textGeometry, material);
   text.position.set(0, 10, -10);
   // scene.add(text);
-  console.log("text");
 });
 
 /**
@@ -74,7 +73,7 @@ function getRandomCoordinatesInRange(min, scale) {
     z = (Math.random() - 0.5) * scale;
     distance = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
   }
-  return [x, y, z];
+  return { x, y, z };
 }
 
 /**
@@ -85,9 +84,9 @@ const sphereGeometry = new THREE.SphereGeometry(0.3);
 for (let i = 0; i < 1000; i++) {
   const star = new THREE.Mesh(sphereGeometry, material);
   let randomCoordinates = getRandomCoordinatesInRange(40, 200);
-  star.position.x = randomCoordinates[0];
-  star.position.y = randomCoordinates[1];
-  star.position.z = randomCoordinates[2];
+  star.position.x = randomCoordinates.x;
+  star.position.y = randomCoordinates.y;
+  star.position.z = randomCoordinates.z;
   star.rotation.x = Math.random() * 2 * Math.PI;
   star.rotation.y = Math.random() * 2 * Math.PI;
   star.rotation.z = Math.random() * 2 * Math.PI;
@@ -289,6 +288,29 @@ tile_outer_ring_28.position.set(
 tile_outer_ring_28.name = "star";
 boardTileGroup.add(tile_outer_ring_28);
 
+const spaceships = new THREE.Group();
+function spawnSpaceship(spawnLocation) {
+  const spaceship = new THREE.Mesh(
+    new THREE.CapsuleGeometry(1, 1, 4, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
+  );
+  spaceship.position.set(spawnLocation.x, spawnLocation.y, spawnLocation.z);
+  spaceship.rotation.z = Math.PI / 4;
+  spaceship.name = "spaceship";
+  spaceships.add(spaceship);
+  return spaceship;
+}
+
+function randomLocation(minX, maxX, minY, maxY, minZ, maxZ) {
+  return {
+    x: (Math.random() - 0.5) * 50,
+    y: (Math.random() - 0.5) * 5,
+    z: (Math.random() - 0.5) * 50,
+  };
+}
+
+scene.add(spaceships);
+
 const parameters = {
   outerRingRadiusWiden: () => {
     boardTileGroup.children[21].position.z -= 0.5;
@@ -412,21 +434,21 @@ scene.add(galaxy_floor);
 // );
 // scene.add(directionalLightHelper);
 
-const pointLightBottomLeft = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
-pointLightBottomLeft.position.set(-7, 1, 7);
-scene.add(pointLightBottomLeft);
+// const pointLightBottomLeft = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+// pointLightBottomLeft.position.set(-7, 1, 7);
+// scene.add(pointLightBottomLeft);
 
-const pointLightBottomRight = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
-pointLightBottomRight.position.set(7, 1, 7);
-scene.add(pointLightBottomRight);
+// const pointLightBottomRight = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+// pointLightBottomRight.position.set(7, 1, 7);
+// scene.add(pointLightBottomRight);
 
-const pointLightTopLeft = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
-pointLightTopLeft.position.set(7, 1, -7);
-scene.add(pointLightTopLeft);
+// const pointLightTopLeft = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+// pointLightTopLeft.position.set(7, 1, -7);
+// scene.add(pointLightTopLeft);
 
-const pointLightTopRight = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
-pointLightTopRight.position.set(-7, 1, -7);
-scene.add(pointLightTopRight);
+// const pointLightTopRight = new THREE.PointLight(0x4d4d75, 0.5, 10, 1);
+// pointLightTopRight.position.set(-7, 1, -7);
+// scene.add(pointLightTopRight);
 
 const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 0.3);
 // scene.add(hemisphereLight);
@@ -476,10 +498,10 @@ const camera = new THREE.PerspectiveCamera(
   75,
   sizes.width / sizes.height,
   0.1,
-  100
+  1000
 );
-camera.position.z = 0;
-camera.position.y = 30;
+camera.position.z = 10;
+camera.position.y = 40;
 camera.lookAt(polaris.position);
 scene.add(camera);
 
@@ -504,16 +526,27 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  */
 const clock = new THREE.Clock();
 
-console.log(boardTileGroup);
+// Hyperparameters
+const spaceshipSecondsToTravel = 10;
+const speedModifier = 0.5;
 
+function makeRandomDirection() {
+  let x = Math.random() - 0.5;
+  let y = Math.random() - 0.5;
+  let z = Math.random() - 0.5;
+  let magnitude = x ** 2 + y ** 2 + z ** 2;
+  magnitude = magnitude ** 0.5;
+  return { x: x / magnitude, y: y / magnitude, z: z / magnitude };
+}
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  console.log(elapsedTime);
 
   //stars should move up and down about their locations
   //planets should rotate about their centers
   for (let tileMesh of boardTileGroup.children) {
     if (tileMesh.name === "star") {
-      tileMesh.position.y = Math.sin(elapsedTime) * 0.2;
+      tileMesh.position.y = Math.sin(elapsedTime * 2) * 0.5;
     } else if (tileMesh.name === "saturn") {
       tileMesh.rotation.y = elapsedTime * 0.5;
     } else if (
@@ -522,6 +555,37 @@ const tick = () => {
       tileMesh.name === "mars"
     ) {
       tileMesh.rotation.y = elapsedTime * 0.5;
+    }
+  }
+
+  //by random chance, create mesh
+  //travel a set time
+  //delete it
+  //spaceships.add(spawnSpaceship({ x: -40, y: 0, z: -20 + elapsedTime }, 100));
+  //console.log(spaceships);
+  if (Math.random() < 0.01) {
+    let spaceship = spawnSpaceship(getRandomCoordinatesInRange(10, 30));
+    spaceship.elapsedTime = elapsedTime;
+    //direction
+    //unit vector in x, y and z
+    spaceship.direction = makeRandomDirection();
+    spaceships.add(spaceship);
+  }
+
+  for (let i = spaceships.children.length - 1; i >= 0; i--) {
+    if (
+      elapsedTime - spaceships.children[i].elapsedTime >
+        spaceshipSecondsToTravel ||
+      spaceships.children.position.distanceTo(camera.position) < 5
+    ) {
+      spaceships.remove(spaceships.children[i]);
+    } else {
+      spaceships.children[i].position.x +=
+        spaceships.children[i].direction.x * speedModifier;
+      spaceships.children[i].position.y +=
+        spaceships.children[i].direction.y * speedModifier;
+      spaceships.children[i].position.z +=
+        spaceships.children[i].direction.z * speedModifier;
     }
   }
 
