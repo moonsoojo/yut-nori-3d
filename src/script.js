@@ -567,7 +567,7 @@ const tick = () => {
   //delete it
   //spaceships.add(spawnSpaceship({ x: -40, y: 0, z: -20 + elapsedTime }, 100));
   //console.log(spaceships);
-  if (Math.random() < 0.03) {
+  if (Math.random() < 0.02) {
     if (Math.random() < 0.8) {
       const spaceshipMesh = new THREE.Mesh(
         new THREE.CapsuleGeometry(1, 1, 4, 8),
@@ -575,7 +575,7 @@ const tick = () => {
       );
       spawnBackgroundMesh(
         spaceshipMesh,
-        getRandomCoordinatesInRange(10, 40),
+        getRandomCoordinatesInRange(30, 100),
         spaceships,
         elapsedTime
       );
@@ -586,7 +586,7 @@ const tick = () => {
       );
       spawnBackgroundMesh(
         starMesh,
-        getRandomCoordinatesInRange(10, 40),
+        getRandomCoordinatesInRange(30, 100),
         shootingStars,
         elapsedTime
       );
@@ -595,10 +595,10 @@ const tick = () => {
 
   for (let i = spaceships.children.length - 1; i >= 0; i--) {
     if (
-      elapsedTime - spaceships.children[i].elapsedTime >
+      elapsedTime - spaceships.children[i].spawnTime >
         spaceshipSecondsToTravel ||
-      spaceships.children[i].position.distanceTo(camera.position) < 30 ||
-      spaceships.children[i].position.distanceTo(galaxyFloor.position) < 20
+      spaceships.children[i].position.distanceTo(camera.position) < 40 ||
+      spaceships.children[i].position.distanceTo(galaxyFloor.position) < 30
     ) {
       spaceships.remove(spaceships.children[i]);
     } else {
@@ -613,7 +613,7 @@ const tick = () => {
 
   for (let i = shootingStars.children.length - 1; i >= 0; i--) {
     if (
-      elapsedTime - shootingStars.children[i].elapsedTime >
+      elapsedTime - shootingStars.children[i].spawnTime >
         shootingStarSecondsToTravel ||
       shootingStars.children[i].position.distanceTo(camera.position) < 30 ||
       shootingStars.children[i].position.distanceTo(galaxyFloor.position) < 20
