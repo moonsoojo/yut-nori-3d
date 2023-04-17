@@ -543,6 +543,13 @@ function makeRandomDirection() {
   magnitude = magnitude ** 0.5;
   return { x: x / magnitude, y: y / magnitude, z: z / magnitude };
 }
+
+let intro = true;
+let introStar = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 1, 4, 8),
+  new THREE.MeshBasicMaterial({ color: 0xffff00 })
+);
+scene.add(introStar);
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
@@ -567,7 +574,7 @@ const tick = () => {
   //delete it
   //spaceships.add(spawnSpaceship({ x: -40, y: 0, z: -20 + elapsedTime }, 100));
   //console.log(spaceships);
-  if (Math.random() < 0.02) {
+  if (Math.random() < 0.05) {
     if (Math.random() < 0.8) {
       const spaceshipMesh = new THREE.Mesh(
         new THREE.CapsuleGeometry(1, 1, 4, 8),
@@ -597,8 +604,8 @@ const tick = () => {
     if (
       elapsedTime - spaceships.children[i].spawnTime >
         spaceshipSecondsToTravel ||
-      spaceships.children[i].position.distanceTo(camera.position) < 40 ||
-      spaceships.children[i].position.distanceTo(galaxyFloor.position) < 30
+      spaceships.children[i].position.distanceTo(camera.position) < 10 //||
+      // spaceships.children[i].position.distanceTo(galaxyFloor.position) < 30
     ) {
       spaceships.remove(spaceships.children[i]);
     } else {
@@ -615,8 +622,8 @@ const tick = () => {
     if (
       elapsedTime - shootingStars.children[i].spawnTime >
         shootingStarSecondsToTravel ||
-      shootingStars.children[i].position.distanceTo(camera.position) < 30 ||
-      shootingStars.children[i].position.distanceTo(galaxyFloor.position) < 20
+      shootingStars.children[i].position.distanceTo(camera.position) < 10 //||
+      // shootingStars.children[i].position.distanceTo(galaxyFloor.position) < 20
     ) {
       shootingStars.remove(shootingStars.children[i]);
     } else {
@@ -627,6 +634,15 @@ const tick = () => {
       shootingStars.children[i].position.z +=
         shootingStars.children[i].direction.z * shootingStarSpeedModifier;
     }
+  }
+
+  if (intro && Math.cos(Math.log10(1 + elapsedTime * 3)) > 0.3) {
+    camera.position.z = Math.cos(Math.log10(1 + elapsedTime * 3)) * 50;
+    camera.position.y = Math.sin(Math.log10(1 + elapsedTime * 3)) * 40;
+    introStar.position.x = Math.cos(elapsedTime * 2) * 25;
+    introStar.position.z = -Math.sin(elapsedTime * 2) * 25;
+  } else {
+    intro = false;
   }
 
   // Update controls
