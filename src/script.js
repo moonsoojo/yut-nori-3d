@@ -3,6 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "lil-gui";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+import CANNON from "cannon";
 
 /**
  * Parameters
@@ -51,6 +52,46 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
   text.position.set(0, 10, -10);
   // scene.add(text);
 });
+
+/**
+ * Physics
+ */
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
+
+const defaultMaterial = new CANNON.Material("concrete");
+const defaultContactMaterial = new CANNON.ContactMaterial(
+  defaultMaterial,
+  defaultMaterial,
+  {
+    friction: 0.1,
+    restitution: 0.7,
+  }
+);
+world.addContactMaterial(defaultContactMaterial);
+
+// Yuts!
+const cylinderShape = new CANNON.Cylinder(1, 1, 5, 5);
+const sphereShape = new CANNON.Sphere(3);
+const yutBody = new CANNON.Body({
+  mass: 1,
+  position: new CANNON.Vec3(0, 10, 30),
+  shape: cylinderShape,
+  //shape: sphereShape,
+  material: defaultMaterial,
+});
+yutBody.applyLocalForce(new CANNON.Vec3(0, 0, -1000), new CANNON.Vec3(0, 0, 0));
+world.addBody(yutBody);
+
+const floorShape = new CANNON.Plane();
+const floorBody = new CANNON.Body({
+  position: new CANNON.Vec3(0, -2, 0),
+});
+floorBody.material = defaultMaterial;
+floorBody.mass = 0;
+floorBody.addShape(floorShape);
+floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI / 2);
+world.addBody(floorBody);
 
 /**
  * Base
@@ -417,6 +458,19 @@ galaxyFloor.name = "galaxyFloor";
 scene.add(galaxyFloor);
 
 /**
+ * Yuts
+ */
+const yutMaterial = new THREE.MeshBasicMaterial({
+  color: "beige",
+});
+const yut = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 10), yutMaterial);
+// const yut = new THREE.Mesh(new THREE.SphereGeometry(3), yutMaterial);
+yut.position.set(0, 10, 0);
+//yut.rotation.x = Math.PI / 6;
+yut.name = "yut";
+scene.add(yut);
+
+/**
  * Lights
  */
 // const ambientLight = new THREE.AmbientLight(0x2a2222, 0.5);
@@ -528,6 +582,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  * Animate
  */
 const clock = new THREE.Clock();
+let oldElapsedTime = 0;
 
 // Hyperparameters
 const spaceshipSecondsToTravel = 10;
@@ -550,8 +605,11 @@ let introStar = new THREE.Mesh(
   new THREE.MeshBasicMaterial({ color: 0xffff00 })
 );
 scene.add(introStar);
+
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
 
   //stars should move up and down about their locations
   //planets should rotate about their centers
@@ -636,14 +694,20 @@ const tick = () => {
     }
   }
 
-  if (intro && Math.cos(Math.log10(1 + elapsedTime * 3)) > 0.3) {
-    camera.position.z = Math.cos(Math.log10(1 + elapsedTime * 3)) * 50;
-    camera.position.y = Math.sin(Math.log10(1 + elapsedTime * 3)) * 40;
-    introStar.position.x = Math.cos(elapsedTime * 2) * 25;
-    introStar.position.z = -Math.sin(elapsedTime * 2) * 25;
-  } else {
-    intro = false;
-  }
+  // Intro
+  // if (intro && Math.cos(Math.log10(1 + elapsedTime * 3)) > 0.3) {
+  //   camera.position.z = Math.cos(Math.log10(1 + elapsedTime * 3)) * 50;
+  //   camera.position.y = Math.sin(Math.log10(1 + elapsedTime * 3)) * 40;
+  //   introStar.position.x = Math.cos(elapsedTime * 2) * 25;
+  //   introStar.position.z = -Math.sin(elapsedTime * 2) * 25;
+  // } else {
+  //   intro = false;
+  // }
+
+  // Update physics world
+  world.step(1 / 60, deltaTime, 3);
+
+  yut.position.copy(yutBody.position);
 
   // Update controls
   controls.update();
