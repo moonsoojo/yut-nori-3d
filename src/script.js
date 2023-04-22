@@ -54,10 +54,25 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
 });
 
 /**
+ * Sounds
+ */
+const hitSound = new Audio("/sounds/hit.mp3");
+
+const playHitSound = (collision) => {
+  const impactStrength = collision.contact.getImpactVelocityAlongNormal();
+
+  if (impactStrength > 3) {
+    hitSound.currentTime = 0;
+    hitSound.play();
+  }
+};
+
+/**
  * Physics
  */
 const world = new CANNON.World();
 world.gravity.set(0, -9.82, 0);
+world.allowSleep = true;
 
 const defaultMaterial = new CANNON.Material("concrete");
 const defaultContactMaterial = new CANNON.ContactMaterial(
@@ -80,6 +95,7 @@ const yutBody = new CANNON.Body({
   //shape: sphereShape,
   material: defaultMaterial,
 });
+yutBody.addEventListener("collide", playHitSound);
 yutBody.applyLocalForce(new CANNON.Vec3(0, 0, -1000), new CANNON.Vec3(0, 0, 0));
 world.addBody(yutBody);
 
@@ -403,7 +419,8 @@ const parameters = {
 /*
  * Debug
  */
-//const gui = new dat.GUI();
+const gui = new dat.GUI();
+const debugObject = {};
 
 // gui.add(parameters, "outerRingRadiusWiden").name("outer ring radius widen");
 // gui
@@ -440,6 +457,12 @@ const parameters = {
 //   pointLightTopLeft.color = new THREE.Color(parameters.pointLightColor);
 //   pointLightTopRight.color = new THREE.Color(parameters.pointLightColor);
 // });
+debugObject.reset = () => {
+  yutBody.removeEventListener("collide", playHitSound);
+  world.removeBody(yutBody);
+  scene.remove(yut);
+};
+gui.add(debugObject, "reset");
 
 /**
  * Board Floor
