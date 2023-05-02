@@ -86,18 +86,23 @@ const defaultContactMaterial = new CANNON.ContactMaterial(
 world.addContactMaterial(defaultContactMaterial);
 
 // Yuts!
-const cylinderShape = new CANNON.Cylinder(1, 1, 5, 5);
+// const cylinderShape = new CANNON.Cylinder(1, 1, 10, 8);
 const sphereShape = new CANNON.Sphere(3);
-const yutBody = new CANNON.Body({
-  mass: 1,
-  position: new CANNON.Vec3(0, 10, 30),
-  shape: cylinderShape,
-  //shape: sphereShape,
-  material: defaultMaterial,
-});
-yutBody.addEventListener("collide", playHitSound);
-yutBody.applyLocalForce(new CANNON.Vec3(0, 0, -1000), new CANNON.Vec3(0, 0, 0));
-world.addBody(yutBody);
+for (let i = 0; i < 4; i++) {
+  const yutBody = new CANNON.Body({
+    mass: 1,
+    position: new CANNON.Vec3(0, 20 * Math.random() * 3, 0),
+    shape: sphereShape,
+    //shape: sphereShape,
+    material: defaultMaterial,
+  });
+  yutBody.addEventListener("collide", playHitSound);
+  yutBody.applyLocalForce(
+    new CANNON.Vec3(0, 0, -10),
+    new CANNON.Vec3(2 * Math.random() * 3, 1 * Math.random() * 3, 0)
+  );
+  world.addBody(yutBody);
+}
 
 const floorShape = new CANNON.Plane();
 const floorBody = new CANNON.Body({
@@ -108,6 +113,11 @@ floorBody.mass = 0;
 floorBody.addShape(floorShape);
 floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI / 2);
 world.addBody(floorBody);
+
+/**
+ * Raycaster
+ */
+const raycaster = new THREE.Raycaster();
 
 /**
  * Base
@@ -486,12 +496,21 @@ scene.add(galaxyFloor);
 const yutMaterial = new THREE.MeshBasicMaterial({
   color: "beige",
 });
-const yut = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 10), yutMaterial);
-// const yut = new THREE.Mesh(new THREE.SphereGeometry(3), yutMaterial);
-yut.position.set(0, 10, 0);
-//yut.rotation.x = Math.PI / 6;
-yut.name = "yut";
-scene.add(yut);
+const yuts = new THREE.Group();
+for (let i = 0; i < 4; i++) {
+  const yut = new THREE.Mesh(
+    // new THREE.CylinderGeometry(1, 1, 10, 8),
+    new THREE.SphereGeometry(3),
+    yutMaterial
+  );
+  // const yut = new THREE.Mesh(new THREE.SphereGeometry(3), yutMaterial);
+  yut.position.set(0, 20, 0);
+  //yut.rotation.x = Math.PI / 6;
+  yut.name = "yut";
+  yuts.add(yut);
+}
+
+scene.add(yuts);
 
 /**
  * Lights
@@ -571,6 +590,16 @@ window.addEventListener("dblclick", () => {
 });
 
 /**
+ * Mouse
+ */
+const mouse = new THREE.Vector2();
+
+window.addEventListener("mousemove", (event) => {
+  mouse.x = (event.clientX / sizes.width) * 2 - 1;
+  mouse.y = (-event.clientY / sizes.height) * 2 + 1;
+});
+
+/**
  * Camera
  */
 // Base camera
@@ -609,9 +638,11 @@ let oldElapsedTime = 0;
 
 // Hyperparameters
 const spaceshipSecondsToTravel = 10;
-const spaceshipSpeedModifier = 0.5;
+const spaceshipSpeedModifier = 0.4;
 const shootingStarSecondsToTravel = 3;
-const shootingStarSpeedModifier = 2;
+const shootingStarSpeedModifier = 1;
+const shootingStarSpawnChance = 0.2;
+const backgroundObjectsSpawnChance = 0.015;
 
 function makeRandomDirection() {
   let x = Math.random() - 0.5;
@@ -655,8 +686,8 @@ const tick = () => {
   //delete it
   //spaceships.add(spawnSpaceship({ x: -40, y: 0, z: -20 + elapsedTime }, 100));
   //console.log(spaceships);
-  if (Math.random() < 0.05) {
-    if (Math.random() < 0.8) {
+  if (Math.random() < backgroundObjectsSpawnChance) {
+    if (Math.random() > shootingStarSpawnChance) {
       const spaceshipMesh = new THREE.Mesh(
         new THREE.CapsuleGeometry(1, 1, 4, 8),
         new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -717,6 +748,32 @@ const tick = () => {
     }
   }
 
+  // object selection
+  raycaster.setFromCamera(mouse, camera);
+
+  let intersectableObjects = boardTileGroup.children;
+  for (const yut of yuts.children) {
+    intersectableObjects.push(yut);
+  }
+
+  const intersects = raycaster.intersectObjects(boardTileGroup.children);
+
+  for (const tile of boardTileGroup.children) {
+    if (tile.type === "Group") {
+      for (const part of tile.children) {
+        part.material.color.set("#ff0000");
+      }
+    } else {
+      tile.material.color.set("#ff0000");
+    }
+  }
+
+  for (const intersect of intersects) {
+    console.log(intersect);
+    intersect.object.material.color.set("#0000ff");
+    break;
+  }
+
   // Intro
   // if (intro && Math.cos(Math.log10(1 + elapsedTime * 3)) > 0.3) {
   //   camera.position.z = Math.cos(Math.log10(1 + elapsedTime * 3)) * 50;
@@ -730,7 +787,10 @@ const tick = () => {
   // Update physics world
   world.step(1 / 60, deltaTime, 3);
 
-  yut.position.copy(yutBody.position);
+  for (let yutIndex = 0; yutIndex < 4; yutIndex++) {
+    yuts.children[yutIndex].position.copy(world.bodies[yutIndex].position);
+    yuts.children[yutIndex].quaternion.copy(world.bodies[yutIndex].quaternion);
+  }
 
   // Update controls
   controls.update();
